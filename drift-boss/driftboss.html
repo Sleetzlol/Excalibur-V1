@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+
+<title>Excaliber | Drift Boss</title>
+<link rel="icon" type="image/x-icon" href="../favicon.ico">
+
+<!-- DRIFT BOSS FILES — SAME FOLDER -->
+<link rel="stylesheet" type="text/css" href="game.css">
+<script src="game.js"></script>
+
+<style>
+    @font-face {
+        font-family: "Avenir";
+        src: local("Avenir"), local("Avenir Next"), local("AvenirNext");
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: "Avenir", Arial, sans-serif;
+        overflow: hidden;
+    }
+
+    body {
+        background: linear-gradient(to bottom, #000814, #003566);
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    header {
+        width: 100%;
+        padding: 20px 0;
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        position: relative;
+        z-index: 4;
+    }
+
+    .menu-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: white;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .menu-button {
+        width: 55px;
+        height: 55px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.4);
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        margin-bottom: 6px;
+        cursor: pointer;
+    }
+
+    .game-box {
+        position: absolute;
+        top: 58%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 85%;
+        height: 68%;
+        background: rgba(255,255,255,0.10);
+        border: 1px solid rgba(255,255,255,0.35);
+        border-radius: 22px;
+        backdrop-filter: blur(6px);
+        overflow: hidden;
+        z-index: 3;
+    }
+
+    .controls {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 5;
+        display: flex;
+        gap: 10px;
+    }
+
+    .ctrl-btn {
+        width: 44px;
+        height: 44px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.35);
+        border-radius: 11px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 22px;
+        cursor: pointer;
+    }
+
+    .footer {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        font-size: 10px;
+        opacity: 0.6;
+        z-index: 4;
+    }
+
+    #constellation {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        height: 40%;
+        z-index: 1;
+    }
+
+</style>
+</head>
+<body>
+
+<canvas id="constellation"></canvas>
+
+<header>
+    <a class="menu-item" href="../index.html">
+        <div class="menu-button">🏠</div>
+        Home
+    </a>
+    <a class="menu-item" href="../games.html">
+        <div class="menu-button">🎮</div>
+        Games
+    </a>
+    <a class="menu-item" href="../apps.html">
+        <div class="menu-button">📱</div>
+        Apps
+    </a>
+    <a class="menu-item" href="../settings.html">
+        <div class="menu-button">⚙️</div>
+        Settings
+    </a>
+</header>
+
+<!-- GAME CONTAINER -->
+<div class="game-box" id="gameBox">
+
+    <div class="controls">
+        <div class="ctrl-btn" onclick="location.reload()">⟳</div>
+        <div class="ctrl-btn" onclick="document.getElementById('gameBox').requestFullscreen()">⛶</div>
+    </div>
+
+    <!-- Drift Boss game area (from original HTML) -->
+    <div id="ajaxbar" style="width:100%; height:100%;">
+        <div id="game"><canvas id="canvas"></canvas></div>
+        <div id="webgl"><canvas id="webglcanvas"></canvas></div>
+        <div id="orientate"><img src="media/graphics/orientate/landscape.jpg"></div>
+        <div id="play" class="play" onclick=""><img src="media/graphics/splash/mobile/cover-start.jpg"></div>
+    </div>
+
+</div>
+
+<div class="footer">Excaliber® V1.0.00</div>
+
+<!-- PARTICLE BACKGROUND -->
+<script>
+    const canvas2 = document.getElementById("constellation");
+    const ctx = canvas2.getContext("2d");
+
+    function resize() {
+        canvas2.width = window.innerWidth;
+        canvas2.height = window.innerHeight * 0.40;
+    }
+
+    window.addEventListener("resize", resize);
+    resize();
+
+    const particles = [];
+    const particleCount = 70;
+
+    for (let i = 0; i < particleCount; i++) {
+        particles.push({
+            x: Math.random() * canvas2.width,
+            y: Math.random() * canvas2.height,
+            vx: (Math.random() - 0.5) * 0.04,
+            vy: (Math.random() - 0.5) * 0.04,
+            radius: 1.3
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas2.width, canvas2.height);
+
+        for (let p of particles) {
+            p.x += p.vx;
+            p.y += p.vy;
+
+            if (p.x < 0 || p.x > canvas2.width) p.vx *= -1;
+            if (p.y < 0 || p.y > canvas2.height) p.vy *= -1;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "white";
+            ctx.fill();
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            for (let j = i + 1; j < particleCount; j++) {
+                let dx = particles[i].x - particles[j].x;
+                let dy = particles[i].y - particles[j].y;
+                let dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < 120) {
+                    ctx.beginPath();
+                    ctx.strokeStyle = "rgba(255,255,255,0.18)";
+                    ctx.lineWidth = 0.4;
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    draw();
+</script>
+
+</body>
+</html>
