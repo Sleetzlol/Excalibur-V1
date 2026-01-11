@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Settings</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+
+<style>
+    @font-face {
+        font-family: "Avenir";
+        src: local("Avenir"), local("Avenir Next"), local("AvenirNext");
+    }
+
+    html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: "Avenir", Arial, sans-serif;
+        overflow-x: hidden;
+        background: linear-gradient(to bottom, #000814, #003566);
+        color: white;
+    }
+
+    header {
+        width: 100%;
+        padding: 20px 0;
+        display: flex;
+        justify-content: center;
+        gap: 60px;
+        position: relative;
+        z-index: 5;
+    }
+
+    .menu-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: white;
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .menu-button {
+        width: 55px;
+        height: 55px;
+        background: rgba(255,255,255,0.12);
+        border: 1px solid rgba(255,255,255,0.4);
+        border-radius: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26px;
+        margin-bottom: 6px;
+        cursor: pointer;
+    }
+
+    h1 {
+        text-align: center;
+        font-size: 38px;
+        margin-top: 20px;
+        z-index: 5;
+        position: relative;
+    }
+
+    .btn-grid {
+        margin: 40px auto;
+        width: 88%;
+        max-width: 600px;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 18px;
+        z-index: 5;
+        position: relative;
+    }
+
+    .settings-btn {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.4);
+        border-radius: 14px;
+        padding: 18px;
+        color: white;
+        font-size: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: 0.20s;
+        user-select: none;
+    }
+
+    .settings-btn:hover {
+        background: rgba(255,255,255,0.25);
+    }
+
+    #constellation {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        height: 40%;
+        z-index: 1;
+    }
+
+    .footer {
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        font-size: 10px;
+        opacity: 0.6;
+        z-index: 5;
+    }
+</style>
+</head>
+<body>
+
+<canvas id="constellation"></canvas>
+
+<header>
+    <a class="menu-item" href="index.html">
+        <div class="menu-button">🏠</div>Home
+    </a>
+
+    <a class="menu-item" href="games.html">
+        <div class="menu-button">🎮</div>Games
+    </a>
+
+    <a class="menu-item" href="apps.html">
+        <div class="menu-button">📱</div>Apps
+    </a>
+
+    <a class="menu-item" href="settings.html">
+        <div class="menu-button">⚙️</div>Settings
+    </a>
+</header>
+
+<h1>Settings</h1>
+
+<div class="btn-grid">
+    <div class="settings-btn" onclick="cloak()">
+        about:blank cloaker
+    </div>
+</div>
+
+<div class="footer">Excalibur® V1.0.00</div>
+
+<script>
+// CLOAKER — opens the current site inside an about:blank iframe
+function cloak() {
+    const win = window.open("about:blank", "_blank");
+    const html = `
+        <style>
+            body, iframe { margin: 0; padding: 0; overflow: hidden; }
+            iframe { width: 100vw; height: 100vh; border: none; }
+        </style>
+        <iframe src="${location.href}"></iframe>
+    `;
+    win.document.write(html);
+    win.document.close();
+}
+</script>
+
+<!-- PARTICLE BACKGROUND -->
+<script>
+const c = document.getElementById("constellation");
+const ctx = c.getContext("2d");
+
+function resize() {
+    c.width = window.innerWidth;
+    c.height = window.innerHeight * 0.40;
+}
+window.addEventListener("resize", resize);
+resize();
+
+const particles = [];
+const count = 70;
+
+for (let i = 0; i < count; i++) {
+    particles.push({
+        x: Math.random() * c.width,
+        y: Math.random() * c.height,
+        vx: (Math.random() - 0.5) * 0.04,
+        vy: (Math.random() - 0.5) * 0.04,
+        radius: 1.3
+    });
+}
+
+function draw() {
+    ctx.clearRect(0,0,c.width,c.height);
+
+    for (let p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > c.width) p.vx *= -1;
+        if (p.y < 0 || p.y > c.height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+        ctx.fillStyle = "white";
+        ctx.fill();
+    }
+
+    for (let i = 0; i < count; i++) {
+        for (let j = i+1; j < count; j++) {
+            let dx = particles[i].x - particles[j].x;
+            let dy = particles[i].y - particles[j].y;
+            let dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist < 120) {
+                ctx.beginPath();
+                ctx.strokeStyle = "rgba(255,255,255,0.18)";
+                ctx.lineWidth = 0.4;
+                ctx.moveTo(particles[i].x, particles[i].y);
+                ctx.lineTo(particles[j].x, particles[j].y);
+                ctx.stroke();
+            }
+        }
+    }
+    requestAnimationFrame(draw);
+}
+
+draw();
+</script>
+
+</body>
+</html>
