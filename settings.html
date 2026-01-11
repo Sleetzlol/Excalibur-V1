@@ -2,8 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Settings</title>
+
+<title>IXL | Math, Language Arts, Science, Social Studies, and Spanish</title>
+
 <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+<meta name="description" content="Excalibur">
+
+<!-- Open Graph -->
+<meta property="og:title" content="Excalibur">
+<meta property="og:description" content="A clean and modern homepage for games, apps, and tools.">
+<meta property="og:image" content="favicon.ico">
+<meta property="og:type" content="website">
 
 <style>
     @font-face {
@@ -16,9 +26,15 @@
         padding: 0;
         height: 100%;
         font-family: "Avenir", Arial, sans-serif;
-        overflow-x: hidden;
+        overflow: hidden;
+    }
+
+    body {
         background: linear-gradient(to bottom, #000814, #003566);
         color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
     }
 
     header {
@@ -28,7 +44,7 @@
         justify-content: center;
         gap: 60px;
         position: relative;
-        z-index: 5;
+        z-index: 3;
     }
 
     .menu-item {
@@ -54,40 +70,54 @@
         cursor: pointer;
     }
 
-    h1 {
+    /* SETTINGS PANEL */
+    .settings-box {
+        position: absolute;
+        top: 56%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 60%;
+        max-width: 520px;
+        background: rgba(255,255,255,0.10);
+        border: 1px solid rgba(255,255,255,0.35);
+        border-radius: 22px;
+        backdrop-filter: blur(6px);
+        padding: 35px 40px;
+        z-index: 3;
         text-align: center;
-        font-size: 38px;
-        margin-top: 20px;
-        z-index: 5;
-        position: relative;
     }
 
-    .btn-grid {
-        margin: 40px auto;
-        width: 88%;
-        max-width: 600px;
-        display: grid;
-        grid-template-columns: 1fr;
-        gap: 18px;
-        z-index: 5;
-        position: relative;
+    .settings-box h1 {
+        margin-top: 0;
+        font-size: 36px;
+        letter-spacing: 8px;
+        margin-bottom: 25px;
     }
 
-    .settings-btn {
-        background: rgba(255,255,255,0.15);
-        border: 1px solid rgba(255,255,255,0.4);
-        border-radius: 14px;
-        padding: 18px;
+    .setting-btn {
+        width: 100%;
+        padding: 14px;
+        margin: 10px 0;
+        background: rgba(255,255,255,0.13);
+        border: 1px solid rgba(255,255,255,0.35);
+        border-radius: 13px;
         color: white;
-        font-size: 20px;
-        text-align: center;
+        font-size: 17px;
         cursor: pointer;
-        transition: 0.20s;
-        user-select: none;
+        transition: 0.15s;
     }
 
-    .settings-btn:hover {
-        background: rgba(255,255,255,0.25);
+    .setting-btn:hover {
+        background: rgba(255,255,255,0.22);
+    }
+
+    .footer {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        font-size: 10px;
+        opacity: 0.6;
+        z-index: 3;
     }
 
     #constellation {
@@ -97,84 +127,75 @@
         height: 40%;
         z-index: 1;
     }
-
-    .footer {
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        font-size: 10px;
-        opacity: 0.6;
-        z-index: 5;
-    }
 </style>
 </head>
 <body>
 
+<script src="/js/cloak.js"></script>
+
 <canvas id="constellation"></canvas>
 
 <header>
-    <a class="menu-item" href="index.html">
-        <div class="menu-button">🏠</div>Home
+    <a class="menu-item" href="settings.html">
+        <div class="menu-button">⚙️</div>
+        Settings
     </a>
 
     <a class="menu-item" href="games.html">
-        <div class="menu-button">🎮</div>Games
+        <div class="menu-button">🎮</div>
+        Games
     </a>
 
     <a class="menu-item" href="apps.html">
-        <div class="menu-button">📱</div>Apps
-    </a>
-
-    <a class="menu-item" href="settings.html">
-        <div class="menu-button">⚙️</div>Settings
+        <div class="menu-button">📱</div>
+        Apps
     </a>
 </header>
 
-<h1>Settings</h1>
+<!-- SETTINGS PANEL -->
+<div class="settings-box">
+    <h1>SETTINGS</h1>
 
-<div class="btn-grid">
-    <div class="settings-btn" onclick="cloak()">
-        about:blank cloaker
-    </div>
+   
+    <button class="setting-btn" onclick="openBlank()">
+        about:blank Cloak
+    </button>
+
 </div>
 
 <div class="footer">Excalibur® V1.0.00</div>
 
 <script>
-// CLOAKER — opens the current site inside an about:blank iframe
-function cloak() {
+/* UNIVERSAL ABOUT:BLANK CLOAKER */
+function openBlank() {
     const win = window.open("about:blank", "_blank");
-    const html = `
-        <style>
-            body, iframe { margin: 0; padding: 0; overflow: hidden; }
-            iframe { width: 100vw; height: 100vh; border: none; }
-        </style>
-        <iframe src="${location.href}"></iframe>
-    `;
-    win.document.write(html);
-    win.document.close();
-}
-</script>
+    if (!win) return alert("Popup blocked!");
 
-<!-- PARTICLE BACKGROUND -->
-<script>
-const c = document.getElementById("constellation");
-const ctx = c.getContext("2d");
+    win.document.write(`
+        <iframe src="${location.href}" style="border:0; position:fixed; top:0; left:0; width:100%; height:100%;"></iframe>
+    `);
+
+    win.document.title = document.title;
+}
+
+/* CONSTELLATION BACKGROUND */
+const canvas = document.getElementById("constellation");
+const ctx = canvas.getContext("2d");
 
 function resize() {
-    c.width = window.innerWidth;
-    c.height = window.innerHeight * 0.40;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight * 0.40;
 }
 window.addEventListener("resize", resize);
 resize();
 
 const particles = [];
-const count = 70;
+const particleCount = 70;
 
-for (let i = 0; i < count; i++) {
+for (let i = 0; i < particleCount; i++) {
     particles.push({
-        x: Math.random() * c.width,
-        y: Math.random() * c.height,
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
         vx: (Math.random() - 0.5) * 0.04,
         vy: (Math.random() - 0.5) * 0.04,
         radius: 1.3
@@ -182,26 +203,26 @@ for (let i = 0; i < count; i++) {
 }
 
 function draw() {
-    ctx.clearRect(0,0,c.width,c.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     for (let p of particles) {
         p.x += p.vx;
         p.y += p.vy;
 
-        if (p.x < 0 || p.x > c.width) p.vx *= -1;
-        if (p.y < 0 || p.y > c.height) p.vy *= -1;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = "white";
         ctx.fill();
     }
 
-    for (let i = 0; i < count; i++) {
-        for (let j = i+1; j < count; j++) {
+    for (let i = 0; i < particleCount; i++) {
+        for (let j = i + 1; j < particleCount; j++) {
             let dx = particles[i].x - particles[j].x;
             let dy = particles[i].y - particles[j].y;
-            let dist = Math.sqrt(dx*dx + dy*dy);
+            let dist = Math.sqrt(dx * dx + dy * dy);
 
             if (dist < 120) {
                 ctx.beginPath();
@@ -213,11 +234,12 @@ function draw() {
             }
         }
     }
+
     requestAnimationFrame(draw);
 }
-
 draw();
 </script>
 
 </body>
 </html>
+
