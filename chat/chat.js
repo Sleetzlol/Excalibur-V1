@@ -1,12 +1,12 @@
-// chat.js
-
+// --------------------------------------------------
+// FIREBASE AUTH LISTENER
+// --------------------------------------------------
 let currentUser = null;
-let currentConversation = null;
+let unsubscribeMessages = null;
 
-// Wait for login
-auth.onAuthStateChanged(user => {
+firebase.auth().onAuthStateChanged(async user => {
     if (!user) {
-        window.location = "login.html";
+        window.location.href = "index.html";
         return;
     }
 
@@ -14,124 +14,177 @@ auth.onAuthStateChanged(user => {
     loadConversations();
 });
 
+const db = firebase.firestore();
+
 
 // --------------------------------------------------
-// LOAD USER'S CONVERSATIONS (GROUPS & DMS)
+// LOAD CONVERSATIONS FOR SIDEBAR
 // --------------------------------------------------
-function loadConversations() {
-    const convoList = document.getElementById("conversationList");
-    convoList.innerHTML = "";
+async function loadConversations() {
+    const list = document.getElementById("conversationList");
+    list.innerHTML = "";
 
-    db.collection("conversations")
+    const snapshot = await db.collection("conversations")
         .where("members", "array-contains", currentUser.uid)
-        .orderBy("createdAt", "desc")
-        .onSnapshot(snapshot => {
-            convoList.innerHTML = "";
+        .orderBy("createdAt", "asc")
+        .get();
 
-            snapshot.forEach(doc => {
-                const data = doc.data();
-
-                const div = document.createElement("div");
-                div.className = "convo-item";
-                div.textContent = data.name || "Unnamed Chat";
-
-                div.onclick = () => openConversation(doc.id, data);
-                convoList.appendChild(div);
-            });
-        });
-
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const div = document.createElement("div");
+        div.className = "conversation-item";
+        div.textContent = data.name || "Unnamed Chat";
+        div.onclick = () => openConversation(doc.id, data);
+        list.appendChild(div);
+    });
 }
 
 
-
 // --------------------------------------------------
-// OPEN A CONVERSATION
+// OPEN A CONVERSATION AND LOAD ITS MESSAGES
 // --------------------------------------------------
-function openConversation(id, data) {
-    currentConversation = id;
-
-    document.getElementById("chatHeader").innerText = data.name || "Chat";
+async function openConversation(id, data) {
+    document.getElementById("chatHeader").textContent = data.name || "Conversation";
     document.getElementById("msgInput").disabled = false;
     document.getElementById("sendBtn").disabled = false;
 
-    loadMessages();
-}
+    if (unsubscribeMessages) unsubscribeMessages();
 
+    const messagesDiv = document.getElementById("messages");
+    messagesDiv.innerHTML = "";
 
-
-// --------------------------------------------------
-// LOAD MESSAGES LIVE
-// --------------------------------------------------
-function loadMessages() {
-    const container = document.getElementById("messages");
-    container.innerHTML = "";
-
-    db.collection("conversations")
-        .doc(currentConversation)
+    unsubscribeMessages = db.collection("conversations")
+        .doc(id)
         .collection("messages")
         .orderBy("timestamp", "asc")
         .onSnapshot(snapshot => {
-            container.innerHTML = "";
-
+            messagesDiv.innerHTML = "";
             snapshot.forEach(doc => {
                 const msg = doc.data();
-
-                const div = document.createElement("div");
-                div.className = "message";
-                if (msg.uid === currentUser.uid) {
-                    div.classList.add("self");
-                }
-
-                div.textContent = msg.text;
-                container.appendChild(div);
+                const p = document.createElement("div");
+                p.className = msg.sender === currentUser.uid ? "msg-out" : "msg-in";
+                p.textContent = msg.text;
+                messagesDiv.appendChild(p);
             });
-
-            container.scrollTop = container.scrollHeight;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
         });
-}
 
+    // Attach send button to this conversation
+    document.getElementById("sendBtn").onclick = () => sendMessage(id);
+}
 
 
 // --------------------------------------------------
 // SEND MESSAGE
 // --------------------------------------------------
-document.getElementById("sendBtn").onclick = async () => {
+async function sendMessage(conversationId) {
     const input = document.getElementById("msgInput");
-    if (!currentConversation || input.value.trim() === "") return;
-
-    await db.collection("conversations")
-        .doc(currentConversation)
-        .collection("messages")
-        .add({
-            uid: currentUser.uid,
-            text: input.value.trim(),
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+    const text = input.value.trim();
+    if (!text) return;
 
     input.value = "";
-};
 
+    await db.collection("conversations")
+        .doc(conversationId)
+        .collection("messages")
+        .add({
+            text,
+            sender: currentUser.uid,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+}
 
 
 // --------------------------------------------------
-// CREATE GROUP CHAT (FIXED!)
+// CREATE A GROUP CHAT
 // --------------------------------------------------
 document.getElementById("newGroupBtn").onclick = async () => {
-    const name = prompt("Enter group chat name:");
+    const name = prompt("Group name:");
     if (!name) return;
 
-    await db.collection("conversations").add({
+    const convo = await db.collection("conversations").add({
         type: "group",
         name: name,
-        members: [currentUser.uid], // REQUIRED — FIXES AUTO-DELETE
-        createdBy: currentUser.uid,
+        members: [currentUser.uid],
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+
+    loadConversations();
 };
 
 
+// --------------------------------------------------
+// LOOK UP USER BY EMAIL (GMAIL)
+// --------------------------------------------------
+async function getUserByEmail(email) {
+    const snap = await db.collection("users")
+        .where("email", "==", email)
+        .limit(1)
+        .get();
+
+    if (snap.empty) return null;
+
+    const doc = snap.docs[0];
+    return { uid: doc.id, ...doc.data() };
+}
+
 
 // --------------------------------------------------
-// LOGOUT
+// START DIRECT MESSAGE WITH GMAIL
+// (Step 3 – already prepared)
 // --------------------------------------------------
-document.getElementById("logoutBtn").onclick = () => auth.signOut();
+async function startDMByEmail() {
+    const email = prompt("Enter Gmail of person to DM:");
+    if (!email) return;
+
+    const target = await getUserByEmail(email);
+    if (!target) {
+        alert("No user found with that Gmail.");
+        return;
+    }
+
+    const targetUid = target.uid;
+
+    // Check if there's already a DM between these two users
+    const existing = await db.collection("conversations")
+        .where("type", "==", "dm")
+        .where("members", "array-contains", currentUser.uid)
+        .get();
+
+    let dmId = null;
+
+    existing.forEach(doc => {
+        const data = doc.data();
+        if (data.members.includes(targetUid)) dmId = doc.id;
+    });
+
+    if (dmId) {
+        openConversation(dmId, { name: target.name });
+        return;
+    }
+
+    // Otherwise create a new DM
+    const newDM = await db.collection("conversations").add({
+        type: "dm",
+        members: [currentUser.uid, targetUid],
+        name: target.name,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    openConversation(newDM.id, { name: target.name });
+}
+
+
+// Connect DM button
+const dmBtn = document.getElementById("startDM");
+if (dmBtn) {
+    dmBtn.onclick = startDMByEmail;
+}
+
+
+// --------------------------------------------------
+// LOG OUT
+// --------------------------------------------------
+document.getElementById("logoutBtn").onclick = async () => {
+    await firebase.auth().signOut();
+};
