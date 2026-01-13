@@ -1,0 +1,146 @@
+/* Background matching your Excalibur theme */
+.chat-bg {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to bottom, #000814, #003566);
+    color: white;
+    font-family: Avenir, Arial, sans-serif;
+}
+
+/* Glass UI */
+.glass-panel {
+    backdrop-filter: blur(7px);
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 15px;
+}
+
+/* Login */
+.login-container {
+    width: 300px;
+    padding: 30px;
+    margin: 120px auto;
+    text-align: center;
+}
+
+.login-title {
+    font-size: 26px;
+    margin-bottom: 20px;
+}
+
+.login-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 8px;
+    cursor: pointer;
+    color: white;
+}
+
+/* Chat layout */
+.chat-layout {
+    display: flex;
+    height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 260px;
+    padding: 15px;
+}
+
+.sidebar-title {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.sidebar-btn {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    color: white;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.4);
+}
+
+.sidebar-logout {
+    margin-top: 20px;
+    padding: 8px;
+    width: 100%;
+    background: rgba(255,50,50,0.2);
+    border: 1px solid rgba(255,50,50,0.4);
+    cursor: pointer;
+    color: white;
+}
+
+/* Conversation list */
+#conversationList {
+    overflow-y: auto;
+    height: calc(100vh - 230px);
+}
+
+.convo-item {
+    padding: 12px;
+    margin-bottom: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+/* Chat window */
+.chat-window {
+    flex: 1;
+    margin-left: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    font-size: 20px;
+    margin-bottom: 15px;
+}
+
+/* Messages */
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.message {
+    margin-bottom: 10px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 10px;
+    max-width: 60%;
+}
+
+.self {
+    margin-left: auto;
+    background: rgba(80,150,255,0.3);
+}
+
+/* Input */
+.message-input {
+    display: flex;
+    gap: 10px;
+}
+
+#msgInput {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+}
+
+#sendBtn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    cursor: pointer;
+}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Chat | Excalibur</title>
+    <link rel="stylesheet" href="chat.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+</head>
+
+<body class="chat-bg">
+
+<div class="chat-layout">
+
+    <div class="sidebar glass-panel">
+        <h2 class="sidebar-title">Chats</h2>
+        <button id="newGroupBtn" class="sidebar-btn">+ New Group</button>
+        <div id="conversationList"></div>
+        <button id="logoutBtn" class="sidebar-logout">Log Out</button>
+    </div>
+
+    <div class="chat-window glass-panel">
+        <div id="chatHeader" class="chat-header">Select a conversation</div>
+
+        <div id="messages" class="messages"></div>
+
+        <div class="message-input">
+            <input id="msgInput" placeholder="Type a message..." disabled>
+            <button id="sendBtn" disabled>Send</button>
+        </div>
+    </div>
+
+</div>
+
+<script src="chat.js"></script>
+</body>
+</html>

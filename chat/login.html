@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Excalibur Chat</title>
+    <link rel="stylesheet" href="chat.css">
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+    <script src="firebase.js"></script>
+</head>
+
+<body class="chat-bg">
+
+<div class="login-container glass-panel">
+    <h1 class="login-title">Excalibur Chat</h1>
+
+    <button id="googleBtn" class="login-btn">
+        Sign in with Google
+    </button>
+</div>
+
+<script>
+    document.getElementById("googleBtn").onclick = async () => {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        try {
+            await auth.signInWithPopup(provider);
+            window.location = "chat.html";
+        } catch (err) {
+            alert("Login failed: " + err.message);
+        }
+    };
+</script>
+
+</body>
+</html>
