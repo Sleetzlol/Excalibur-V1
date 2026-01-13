@@ -3,8 +3,8 @@
 let currentUser = null;
 let currentConversation = null;
 
-// Check authentication
-auth.onAuthStateChanged(async user => {
+// Wait for login
+auth.onAuthStateChanged(user => {
     if (!user) {
         window.location = "login.html";
         return;
@@ -14,39 +14,54 @@ auth.onAuthStateChanged(async user => {
     loadConversations();
 });
 
-// Load list of chats (DMs + groups)
-async function loadConversations() {
+
+// --------------------------------------------------
+// LOAD USER'S CONVERSATIONS (GROUPS & DMS)
+// --------------------------------------------------
+function loadConversations() {
     const convoList = document.getElementById("conversationList");
     convoList.innerHTML = "";
 
     db.collection("conversations")
         .where("members", "array-contains", currentUser.uid)
+        .orderBy("createdAt", "desc")
         .onSnapshot(snapshot => {
             convoList.innerHTML = "";
 
             snapshot.forEach(doc => {
                 const data = doc.data();
+
                 const div = document.createElement("div");
                 div.className = "convo-item";
-                div.innerText = data.name || "Unnamed Chat";
+                div.textContent = data.name || "Unnamed Chat";
+
                 div.onclick = () => openConversation(doc.id, data);
                 convoList.appendChild(div);
             });
         });
+
 }
 
-// Open a conversation
+
+
+// --------------------------------------------------
+// OPEN A CONVERSATION
+// --------------------------------------------------
 function openConversation(id, data) {
     currentConversation = id;
 
-    document.getElementById("chatHeader").innerText = data.name;
+    document.getElementById("chatHeader").innerText = data.name || "Chat";
     document.getElementById("msgInput").disabled = false;
     document.getElementById("sendBtn").disabled = false;
 
     loadMessages();
 }
 
-// Load messages live
+
+
+// --------------------------------------------------
+// LOAD MESSAGES LIVE
+// --------------------------------------------------
 function loadMessages() {
     const container = document.getElementById("messages");
     container.innerHTML = "";
@@ -54,18 +69,20 @@ function loadMessages() {
     db.collection("conversations")
         .doc(currentConversation)
         .collection("messages")
-        .orderBy("timestamp")
+        .orderBy("timestamp", "asc")
         .onSnapshot(snapshot => {
             container.innerHTML = "";
 
             snapshot.forEach(doc => {
                 const msg = doc.data();
+
                 const div = document.createElement("div");
                 div.className = "message";
+                if (msg.uid === currentUser.uid) {
+                    div.classList.add("self");
+                }
 
-                if (msg.uid === currentUser.uid) div.classList.add("self");
-
-                div.innerText = msg.text;
+                div.textContent = msg.text;
                 container.appendChild(div);
             });
 
@@ -73,25 +90,32 @@ function loadMessages() {
         });
 }
 
-// Send message
+
+
+// --------------------------------------------------
+// SEND MESSAGE
+// --------------------------------------------------
 document.getElementById("sendBtn").onclick = async () => {
     const input = document.getElementById("msgInput");
-
-    if (input.value.trim() === "" || !currentConversation) return;
+    if (!currentConversation || input.value.trim() === "") return;
 
     await db.collection("conversations")
         .doc(currentConversation)
         .collection("messages")
         .add({
             uid: currentUser.uid,
-            text: input.value,
+            text: input.value.trim(),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
     input.value = "";
 };
 
-// Create group
+
+
+// --------------------------------------------------
+// CREATE GROUP CHAT (FIXED!)
+// --------------------------------------------------
 document.getElementById("newGroupBtn").onclick = async () => {
     const name = prompt("Enter group chat name:");
     if (!name) return;
@@ -99,10 +123,15 @@ document.getElementById("newGroupBtn").onclick = async () => {
     await db.collection("conversations").add({
         type: "group",
         name: name,
-        members: [currentUser.uid],
+        members: [currentUser.uid], // REQUIRED — FIXES AUTO-DELETE
+        createdBy: currentUser.uid,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 };
 
-// Logout
+
+
+// --------------------------------------------------
+// LOGOUT
+// --------------------------------------------------
 document.getElementById("logoutBtn").onclick = () => auth.signOut();
