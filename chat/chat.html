@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat | Excalibur</title>
+
     <link rel="stylesheet" href="chat.css">
 
     <!-- Firebase -->
@@ -10,6 +11,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
+    <!-- Your Firebase Config -->
     <script src="firebase.js"></script>
 </head>
 
@@ -17,37 +19,44 @@
 
 <div class="chat-layout">
 
+    <!-- SIDEBAR -->
     <div class="sidebar glass-panel">
+
         <h2 class="sidebar-title">Chats</h2>
 
-        <!-- Group creation -->
+        <!-- Buttons your JS expects -->
         <button id="newGroupBtn" class="sidebar-btn">+ New Group</button>
-
-        <!-- Direct Messages -->
         <button id="startDM" class="sidebar-btn">+ Direct Message</button>
-
-        <!-- Add member to selected group -->
         <button id="addUser" class="sidebar-btn">+ Add Member</button>
 
+        <!-- Conversation list -->
         <div id="conversationList"></div>
 
         <button id="logoutBtn" class="sidebar-logout">Log Out</button>
     </div>
 
+
+    <!-- CHAT WINDOW -->
     <div class="chat-window glass-panel">
+
+        <!-- Header that changes to DM or Group name -->
         <div id="chatHeader" class="chat-header">Select a conversation</div>
 
+        <!-- Live messages -->
         <div id="messages" class="messages"></div>
 
+        <!-- Message input -->
         <div class="message-input">
             <input id="msgInput" placeholder="Type a message..." disabled>
             <button id="sendBtn" disabled>Send</button>
         </div>
+
     </div>
 
 </div>
 
-<!-- Main JS -->
+<!-- Your Chat Logic -->
 <script src="chat.js"></script>
+
 </body>
 </html>

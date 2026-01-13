@@ -1,12 +1,14 @@
-// --------------------------------------------------
-// FIREBASE AUTH LISTENER
-// --------------------------------------------------
-let currentUser = null;
-let unsubscribeMessages = null;
+// chat.js
 
-firebase.auth().onAuthStateChanged(async user => {
+let currentUser = null;
+let currentConversation = null;
+
+// -----------------------------
+// LOGIN CHECK
+// -----------------------------
+auth.onAuthStateChanged(user => {
     if (!user) {
-        window.location.href = "index.html";
+        window.location = "login.html";
         return;
     }
 
@@ -14,177 +16,227 @@ firebase.auth().onAuthStateChanged(async user => {
     loadConversations();
 });
 
-const db = firebase.firestore();
 
+// -----------------------------
+// LOAD USER CONVERSATIONS
+// -----------------------------
+function loadConversations() {
+    const convoList = document.getElementById("conversationList");
+    convoList.innerHTML = "";
 
-// --------------------------------------------------
-// LOAD CONVERSATIONS FOR SIDEBAR
-// --------------------------------------------------
-async function loadConversations() {
-    const list = document.getElementById("conversationList");
-    list.innerHTML = "";
-
-    const snapshot = await db.collection("conversations")
+    db.collection("conversations")
         .where("members", "array-contains", currentUser.uid)
-        .orderBy("createdAt", "asc")
-        .get();
+        .orderBy("createdAt", "desc")
+        .onSnapshot(snapshot => {
+            convoList.innerHTML = "";
 
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        const div = document.createElement("div");
-        div.className = "conversation-item";
-        div.textContent = data.name || "Unnamed Chat";
-        div.onclick = () => openConversation(doc.id, data);
-        list.appendChild(div);
-    });
+            snapshot.forEach(doc => {
+                const data = doc.data();
+
+                const div = document.createElement("div");
+                div.className = "convo-item";
+
+                let label = data.name;
+
+                // DM NAME FIX
+                if (data.type === "dm") {
+                    const other = data.memberInfo
+                        ? Object.values(data.memberInfo).find(u => u.uid !== currentUser.uid)
+                        : null;
+
+                    if (other)
+                        label = other.email || "Direct Message";
+                }
+
+                div.textContent = label || "Chat";
+                div.onclick = () => openConversation(doc.id, data);
+
+                convoList.appendChild(div);
+            });
+        });
 }
 
 
-// --------------------------------------------------
-// OPEN A CONVERSATION AND LOAD ITS MESSAGES
-// --------------------------------------------------
-async function openConversation(id, data) {
-    document.getElementById("chatHeader").textContent = data.name || "Conversation";
+// -----------------------------
+// OPEN CONVERSATION
+// -----------------------------
+function openConversation(id, data) {
+    currentConversation = id;
+
+    let label = data.name;
+    if (data.type === "dm") {
+        const other = data.memberInfo
+            ? Object.values(data.memberInfo).find(u => u.uid !== currentUser.uid)
+            : null;
+        if (other) label = other.email;
+    }
+
+    document.getElementById("chatHeader").innerText = label || "Chat";
     document.getElementById("msgInput").disabled = false;
     document.getElementById("sendBtn").disabled = false;
 
-    if (unsubscribeMessages) unsubscribeMessages();
+    loadMessages();
+}
 
-    const messagesDiv = document.getElementById("messages");
-    messagesDiv.innerHTML = "";
 
-    unsubscribeMessages = db.collection("conversations")
-        .doc(id)
+// -----------------------------
+// LOAD MESSAGES
+// -----------------------------
+function loadMessages() {
+    const container = document.getElementById("messages");
+    container.innerHTML = "";
+
+    db.collection("conversations")
+        .doc(currentConversation)
         .collection("messages")
         .orderBy("timestamp", "asc")
         .onSnapshot(snapshot => {
-            messagesDiv.innerHTML = "";
+            container.innerHTML = "";
+
             snapshot.forEach(doc => {
                 const msg = doc.data();
-                const p = document.createElement("div");
-                p.className = msg.sender === currentUser.uid ? "msg-out" : "msg-in";
-                p.textContent = msg.text;
-                messagesDiv.appendChild(p);
-            });
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        });
 
-    // Attach send button to this conversation
-    document.getElementById("sendBtn").onclick = () => sendMessage(id);
+                const div = document.createElement("div");
+                div.className = "message";
+                if (msg.uid === currentUser.uid) {
+                    div.classList.add("self");
+                }
+
+                div.textContent = msg.text;
+                container.appendChild(div);
+            });
+
+            container.scrollTop = container.scrollHeight;
+        });
 }
 
 
-// --------------------------------------------------
+// -----------------------------
 // SEND MESSAGE
-// --------------------------------------------------
-async function sendMessage(conversationId) {
+// -----------------------------
+document.getElementById("sendBtn").onclick = async () => {
     const input = document.getElementById("msgInput");
-    const text = input.value.trim();
-    if (!text) return;
-
-    input.value = "";
+    if (!currentConversation || input.value.trim() === "") return;
 
     await db.collection("conversations")
-        .doc(conversationId)
+        .doc(currentConversation)
         .collection("messages")
         .add({
-            text,
-            sender: currentUser.uid,
+            uid: currentUser.uid,
+            text: input.value.trim(),
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
-}
 
-
-// --------------------------------------------------
-// CREATE A GROUP CHAT
-// --------------------------------------------------
-document.getElementById("newGroupBtn").onclick = async () => {
-    const name = prompt("Group name:");
-    if (!name) return;
-
-    const convo = await db.collection("conversations").add({
-        type: "group",
-        name: name,
-        members: [currentUser.uid],
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    loadConversations();
+    input.value = "";
 };
 
 
-// --------------------------------------------------
-// LOOK UP USER BY EMAIL (GMAIL)
-// --------------------------------------------------
-async function getUserByEmail(email) {
-    const snap = await db.collection("users")
-        .where("email", "==", email)
-        .limit(1)
-        .get();
-
-    if (snap.empty) return null;
-
-    const doc = snap.docs[0];
-    return { uid: doc.id, ...doc.data() };
-}
-
-
-// --------------------------------------------------
-// START DIRECT MESSAGE WITH GMAIL
-// (Step 3 – already prepared)
-// --------------------------------------------------
-async function startDMByEmail() {
-    const email = prompt("Enter Gmail of person to DM:");
+// ==========================================================
+// STEP A — CREATE DIRECT MESSAGE
+// ==========================================================
+document.getElementById("startDM").onclick = async () => {
+    const email = prompt("Enter Gmail of the user you want to DM:");
     if (!email) return;
 
-    const target = await getUserByEmail(email);
-    if (!target) {
-        alert("No user found with that Gmail.");
+    // Find user in Firestore
+    const userQuery = await db.collection("users")
+        .where("email", "==", email.trim())
+        .get();
+
+    if (userQuery.empty) {
+        alert("User not found.");
         return;
     }
 
-    const targetUid = target.uid;
+    const otherUser = userQuery.docs[0].data();
+    const otherUID = userQuery.docs[0].id;
 
-    // Check if there's already a DM between these two users
-    const existing = await db.collection("conversations")
+    // Check if DM already exists
+    const existingDM = await db.collection("conversations")
         .where("type", "==", "dm")
         .where("members", "array-contains", currentUser.uid)
         .get();
 
-    let dmId = null;
+    for (const doc of existingDM.docs) {
+        const d = doc.data();
+        if (d.members.includes(otherUID)) {
+            alert("DM already exists, opening it.");
+            openConversation(doc.id, d);
+            return;
+        }
+    }
 
-    existing.forEach(doc => {
-        const data = doc.data();
-        if (data.members.includes(targetUid)) dmId = doc.id;
+    // Create DM
+    await db.collection("conversations").add({
+        type: "dm",
+        members: [currentUser.uid, otherUID],
+        memberInfo: {
+            [currentUser.uid]: { uid: currentUser.uid, email: currentUser.email },
+            [otherUID]: { uid: otherUID, email: otherUser.email }
+        },
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+};
 
-    if (dmId) {
-        openConversation(dmId, { name: target.name });
+
+// ==========================================================
+// STEP B — ADD MEMBER TO GROUP
+// ==========================================================
+document.getElementById("addUser").onclick = async () => {
+    if (!currentConversation) return alert("Open a group chat first.");
+
+    const email = prompt("Enter Gmail to add to this group:");
+    if (!email) return;
+
+    // Lookup user
+    const userQuery = await db.collection("users")
+        .where("email", "==", email.trim())
+        .get();
+
+    if (userQuery.empty) {
+        alert("User not found.");
         return;
     }
 
-    // Otherwise create a new DM
-    const newDM = await db.collection("conversations").add({
-        type: "dm",
-        members: [currentUser.uid, targetUid],
-        name: target.name,
+    const userData = userQuery.docs[0].data();
+    const userId = userQuery.docs[0].id;
+
+    // Add user to group
+    await db.collection("conversations")
+        .doc(currentConversation)
+        .update({
+            members: firebase.firestore.FieldValue.arrayUnion(userId),
+            [`memberInfo.${userId}`]: {
+                uid: userId,
+                email: userData.email
+            }
+        });
+
+    alert("User added!");
+};
+
+
+// -----------------------------
+// CREATE GROUP CHAT
+// -----------------------------
+document.getElementById("newGroupBtn").onclick = async () => {
+    const name = prompt("Enter group chat name:");
+    if (!name) return;
+
+    await db.collection("conversations").add({
+        type: "group",
+        name: name,
+        members: [currentUser.uid],
+        memberInfo: {
+            [currentUser.uid]: { uid: currentUser.uid, email: currentUser.email }
+        },
+        createdBy: currentUser.uid,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-
-    openConversation(newDM.id, { name: target.name });
-}
-
-
-// Connect DM button
-const dmBtn = document.getElementById("startDM");
-if (dmBtn) {
-    dmBtn.onclick = startDMByEmail;
-}
-
-
-// --------------------------------------------------
-// LOG OUT
-// --------------------------------------------------
-document.getElementById("logoutBtn").onclick = async () => {
-    await firebase.auth().signOut();
 };
+
+
+// -----------------------------
+// LOGOUT
+// -----------------------------
+document.getElementById("logoutBtn").onclick = () => auth.signOut();
